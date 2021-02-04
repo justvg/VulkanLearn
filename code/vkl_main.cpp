@@ -74,6 +74,8 @@ private:
     VkFormat vkSwapChainImageFormat;
     VkExtent2D vkSwapChainExtent;
 
+    std::vector<VkImageView> vkSwapChainImageViews;
+
 private:
     void initWindow()
     {
@@ -92,6 +94,8 @@ private:
         pickPhysicalDevice();
         createLogicalDevice();
         createSwapChain();
+        createImageViews();
+        createGraphicsPipeline();
     }
 
     void mainLoop()
@@ -104,6 +108,11 @@ private:
 
     void cleanup()
     {
+        for(VkImageView &imageView : vkSwapChainImageViews)
+        {
+            vkDestroyImageView(vkLogicalDevice, imageView, nullptr);
+        }
+
         vkDestroySwapchainKHR(vkLogicalDevice, vkSwapChain, nullptr);
         vkDestroyDevice(vkLogicalDevice, nullptr);
         vkDestroySurfaceKHR(vkInstance, vkWindowSurface, nullptr);
@@ -289,6 +298,38 @@ private:
 
         vkSwapChainImageFormat = surfaceFormat.format;
         vkSwapChainExtent = extent;
+    }
+
+    void createImageViews()
+    {
+        vkSwapChainImageViews.resize(vkSwapChainImages.size());
+
+        for(size_t I = 0; I < vkSwapChainImages.size(); I++)
+        {
+            VkImageViewCreateInfo createInfo = {};
+            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            createInfo.pNext = nullptr;
+            createInfo.flags = 0;
+            createInfo.image = vkSwapChainImages[I];
+            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            createInfo.format = VK_FORMAT_B8G8R8A8_UNORM;
+            createInfo.components = {VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY, VK_COMPONENT_SWIZZLE_IDENTITY};
+            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            createInfo.subresourceRange.baseMipLevel = 0;
+            createInfo.subresourceRange.levelCount = 1;
+            createInfo.subresourceRange.baseArrayLayer = 0;
+            createInfo.subresourceRange.layerCount = 1;
+
+            if(vkCreateImageView(vkLogicalDevice, &createInfo, nullptr, &vkSwapChainImageViews[I]) != VK_SUCCESS)
+            {
+                throw std::runtime_error("failed to create image view!");
+            }
+        }
+    }
+
+    void createGraphicsPipeline()
+    {
+        
     }
 
     bool isDeviceSuitable(VkPhysicalDevice device)
