@@ -228,7 +228,7 @@ Clamp(float Value, float Min, float Max)
         Min = Max;
         Max = Temp;
     }
-    Assert(Min <= Max);
+    assert(Min <= Max);
 
     if(Value < Min) Value = Min;
     else if(Value > Max) Value = Max;
