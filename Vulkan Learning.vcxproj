@@ -97,6 +97,12 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <CustomBuild>
+      <Command>$(VULKAN_SDK)\Bin\glslangValidator "%(FullPath)" -V -o data/shaders_bytecode/%(Filename).spv</Command>
+      <Outputs>data/shaders_bytecode/%(Filename).spv</Outputs>
+      <AdditionalInputs>%(FullPath)</AdditionalInputs>
+      <BuildInParallel>false</BuildInParallel>
+    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -113,12 +119,18 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <CustomBuild>
+      <Command>$(VULKAN_SDK)\Bin\glslangValidator "%(FullPath)" -V -o data/shaders_bytecode/%(Filename).spv</Command>
+      <Outputs>data/shaders_bytecode/%(Filename).spv</Outputs>
+      <AdditionalInputs>%(FullPath)</AdditionalInputs>
+      <BuildInParallel>false</BuildInParallel>
+    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;WIN32_LEAN_AND_MEAN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -130,6 +142,12 @@
     <BuildLog>
       <Path>$(SolutionDir)build\$(MSBuildProjectName).log</Path>
     </BuildLog>
+    <CustomBuild>
+      <Command>$(VULKAN_SDK)\Bin\glslangValidator "%(FullPath)" -V -o data/shaders_bytecode/%(Filename).spv</Command>
+      <Outputs>data/shaders_bytecode/%(Filename).spv</Outputs>
+      <AdditionalInputs>%(FullPath)</AdditionalInputs>
+      <BuildInParallel>false</BuildInParallel>
+    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -137,7 +155,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;WIN32_LEAN_AND_MEAN;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -146,6 +164,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <CustomBuild>
+      <Command>$(VULKAN_SDK)\Bin\glslangValidator "%(FullPath)" -V -o data/shaders_bytecode/%(Filename).spv</Command>
+      <Outputs>data/shaders_bytecode/%(Filename).spv</Outputs>
+      <AdditionalInputs>%(FullPath)</AdditionalInputs>
+      <BuildInParallel>false</BuildInParallel>
+    </CustomBuild>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="code\vkl_main.cpp" />
@@ -154,6 +178,12 @@
     <ClInclude Include="code\vkl_math.h" />
   </ItemGroup>
   <ItemGroup>
+    <CustomBuild Include="code\shaders\triangle.frag.glsl">
+      <FileType>Document</FileType>
+    </CustomBuild>
+    <CustomBuild Include="code\shaders\triangle.vert.glsl">
+      <FileType>Document</FileType>
+    </CustomBuild>
     <None Include="data\shaders\triangle_vs.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

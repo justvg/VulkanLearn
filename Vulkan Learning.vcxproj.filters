@@ -27,4 +27,8 @@
   <ItemGroup>
     <None Include="data\shaders\triangle_vs.glsl" />
   </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="code\shaders\triangle.vert.glsl" />
+    <CustomBuild Include="code\shaders\triangle.frag.glsl" />
+  </ItemGroup>
 </Project>
