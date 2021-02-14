@@ -501,7 +501,16 @@ VkImageMemoryBarrier imageBarrier(VkImage image, VkAccessFlags srcAccessMask, Vk
     return result;
 }
 
-VkImageView depthImageView = 0;
+uint32_t selectMemoryType(const VkPhysicalDeviceMemoryProperties& memoryProperties, uint32_t memoryTypeBits, VkMemoryPropertyFlags flags)
+{
+    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
+        if (((memoryTypeBits & (1 << i)) != 0) && ((memoryProperties.memoryTypes[i].propertyFlags & flags) == flags))
+            return i;
+
+    assert(!"No compatible memory type found!");
+    return UINT32_MAX;
+}
+
 struct Swapchain
 {
     VkSwapchainKHR swapchain;
@@ -512,10 +521,14 @@ struct Swapchain
 
     uint32_t width, height;
     uint32_t imageCount;
+
+    VkImage depthImage;
+    VkDeviceMemory depthImageMemory;
+    VkImageView depthImageView;
 };
 
-void createSwapchain(Swapchain &result, VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface,
-                     uint32_t familyIndex, VkFormat format, VkRenderPass renderPass, VkSwapchainKHR oldSwapchain = 0)
+void createSwapchain(Swapchain &result, VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, uint32_t familyIndex, 
+                     VkFormat format, VkRenderPass renderPass, const VkPhysicalDeviceMemoryProperties& memoryProperties, VkSwapchainKHR oldSwapchain = 0)
 {
     VkSurfaceCapabilitiesKHR surfaceCaps;
     VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCaps));
@@ -539,6 +552,44 @@ void createSwapchain(Swapchain &result, VkPhysicalDevice physicalDevice, VkDevic
         assert(imageViews[i]);
     }
 
+    VkImageCreateInfo depthImageCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+    depthImageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    depthImageCreateInfo.format = VK_FORMAT_D24_UNORM_S8_UINT;
+    depthImageCreateInfo.extent.width = surfaceCaps.currentExtent.width;
+    depthImageCreateInfo.extent.height = surfaceCaps.currentExtent.height;
+    depthImageCreateInfo.extent.depth = 1;
+    depthImageCreateInfo.mipLevels = 1;
+    depthImageCreateInfo.arrayLayers = 1;
+    depthImageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    depthImageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    depthImageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+    depthImageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    depthImageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    VkImage depthImage = 0;
+    VK_CHECK(vkCreateImage(device, &depthImageCreateInfo, 0, &depthImage));
+    assert(depthImage);
+
+    VkMemoryRequirements depthImageMemoryRequirements;
+    vkGetImageMemoryRequirements(device, depthImage, &depthImageMemoryRequirements);
+
+    uint32_t memoryTypeIndex = selectMemoryType(memoryProperties, depthImageMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    assert(memoryTypeIndex != UINT32_MAX);
+
+    VkMemoryAllocateInfo depthImageAllocateInfo = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
+    depthImageAllocateInfo.allocationSize = depthImageMemoryRequirements.size;
+    depthImageAllocateInfo.memoryTypeIndex = memoryTypeIndex;
+
+    VkDeviceMemory depthImageMemory = 0;
+    VK_CHECK(vkAllocateMemory(device, &depthImageAllocateInfo, 0, &depthImageMemory));
+    assert(depthImageMemory);
+
+    VK_CHECK(vkBindImageMemory(device, depthImage, depthImageMemory, 0));
+
+    VkImageView depthImageView = 0;
+    depthImageView = createImageView(device, depthImage, VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_ASPECT_DEPTH_BIT);
+    assert(depthImageView);
+
     std::vector<VkFramebuffer> framebuffers(imageCount);
     for (uint32_t i = 0; i < imageCount; i++)
     {
@@ -555,6 +606,10 @@ void createSwapchain(Swapchain &result, VkPhysicalDevice physicalDevice, VkDevic
     result.width = width; 
     result.height = height;
     result.imageCount = imageCount;
+
+    result.depthImage = depthImage;
+    result.depthImageMemory = depthImageMemory;
+    result.depthImageView = depthImageView;
 }
 
 void destroySwapchain(VkDevice device, const Swapchain& swapchain)
@@ -569,7 +624,7 @@ void destroySwapchain(VkDevice device, const Swapchain& swapchain)
 }
 
 void resizeSwapchainIfNecessary(Swapchain& result, VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface,
-                                uint32_t familyIndex, VkFormat format, VkRenderPass renderPass)
+                                uint32_t familyIndex, VkFormat format, VkRenderPass renderPass, const VkPhysicalDeviceMemoryProperties& memoryProperties)
 {
     VkSurfaceCapabilitiesKHR surfaceCaps;
     VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCaps));
@@ -582,7 +637,7 @@ void resizeSwapchainIfNecessary(Swapchain& result, VkPhysicalDevice physicalDevi
 
     Swapchain old = result;
 
-    createSwapchain(result, physicalDevice, device, surface, familyIndex, format, renderPass, old.swapchain);
+    createSwapchain(result, physicalDevice, device, surface, familyIndex, format, renderPass, memoryProperties, old.swapchain);
 
     VK_CHECK(vkDeviceWaitIdle(device));
 
@@ -684,16 +739,6 @@ struct Buffer
     void *data;
     size_t size;
 };
-
-uint32_t selectMemoryType(const VkPhysicalDeviceMemoryProperties& memoryProperties, uint32_t memoryTypeBits, VkMemoryPropertyFlags flags)
-{
-    for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; i++)
-        if (((memoryTypeBits & (1 << i)) != 0) && ((memoryProperties.memoryTypes[i].propertyFlags & flags) == flags))
-            return i;
-
-    assert(!"No compatible memory type found!");
-    return UINT32_MAX;
-}
 
 void createBuffer(Buffer &result, VkDevice device, const VkPhysicalDeviceMemoryProperties& memoryProperties, size_t size, VkBufferUsageFlags usage)
 {
@@ -805,52 +850,8 @@ int main()
     VkPhysicalDeviceMemoryProperties memoryProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memoryProperties);
 
-
-    VkImage depthImage = 0;
-    VkDeviceMemory depthImageMemory = 0;
-    //VkImageView depthImageView = 0;
-
-    VkSurfaceCapabilitiesKHR surfaceCaps;
-    VK_CHECK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfaceCaps));
-
-    VkImageCreateInfo imageCreateInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
-    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageCreateInfo.format = VK_FORMAT_D24_UNORM_S8_UINT;
-    imageCreateInfo.extent.width = surfaceCaps.currentExtent.width;
-    imageCreateInfo.extent.height = surfaceCaps.currentExtent.height;
-    imageCreateInfo.extent.depth = 1;
-    imageCreateInfo.mipLevels = 1;
-    imageCreateInfo.arrayLayers = 1;
-    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-    imageCreateInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-    VK_CHECK(vkCreateImage(device, &imageCreateInfo, 0, &depthImage));
-    assert(depthImage);
-
-    VkMemoryRequirements depthImageMemoryRequirements;
-    vkGetImageMemoryRequirements(device, depthImage, &depthImageMemoryRequirements);
-
-    uint32_t memoryTypeIndex = selectMemoryType(memoryProperties, depthImageMemoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    assert(memoryTypeIndex != UINT32_MAX);
-
-    VkMemoryAllocateInfo depthImageAllocateInfo = { VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
-    depthImageAllocateInfo.allocationSize = depthImageMemoryRequirements.size;
-    depthImageAllocateInfo.memoryTypeIndex = memoryTypeIndex;
-
-    VK_CHECK(vkAllocateMemory(device, &depthImageAllocateInfo, 0, &depthImageMemory));
-    assert(depthImageMemory);
-
-    VK_CHECK(vkBindImageMemory(device, depthImage, depthImageMemory, 0));
-
-    depthImageView = createImageView(device, depthImage, VK_FORMAT_D24_UNORM_S8_UINT, VK_IMAGE_ASPECT_DEPTH_BIT);
-    assert(depthImageView);
-
-
     Swapchain swapchain;
-    createSwapchain(swapchain, physicalDevice, device, surface, familyIndex, swapchainFormat, renderPass);
+    createSwapchain(swapchain, physicalDevice, device, surface, familyIndex, swapchainFormat, renderPass, memoryProperties);
 
     VkCommandPool commandPool = createCommandPool(device, familyIndex);
     assert(commandPool);
@@ -881,7 +882,7 @@ int main()
     {
         glfwPollEvents();
 
-        resizeSwapchainIfNecessary(swapchain, physicalDevice, device, surface, familyIndex, swapchainFormat, renderPass);
+        resizeSwapchainIfNecessary(swapchain, physicalDevice, device, surface, familyIndex, swapchainFormat, renderPass, memoryProperties);
 
         uint32_t imageIndex = 0;
         VK_CHECK(vkAcquireNextImageKHR(device, swapchain.swapchain, UINT64_MAX, acquireSemaphore, VK_NULL_HANDLE, &imageIndex));
