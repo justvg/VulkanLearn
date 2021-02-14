@@ -18,9 +18,60 @@
     <ClCompile Include="code\vkl_main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\allocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\clusterizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\indexcodec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\indexgenerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\overdrawanalyzer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\overdrawoptimizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\simplifier.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\spatialorder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\stripifier.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\vcacheanalyzer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\vcacheoptimizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\vertexcodec.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\vertexfilter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\vfetchanalyzer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\meshoptimizer\src\vfetchoptimizer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="code\vkl_math.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\meshoptimizer\src\meshoptimizer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\meshoptimizer\demo\fast_obj.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
